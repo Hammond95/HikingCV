@@ -1,0 +1,1 @@
+MAP__PATH_SYNTAX="""Path syntax: {path}?sep={separator}&label_col={col_name}&lat_col={col_name}&lng_col={col_name}&desc_columns={coln},{colm},{colk}"""

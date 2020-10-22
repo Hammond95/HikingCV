@@ -31,7 +31,7 @@ def parse(filename, trk_name=None):
     segment = None
     for child in trk:
         if (not track_name) and (check_tag(child, "name")):
-            track_name = str(child.tag.text)
+            track_name = str(child.text)
         
         if check_tag(child, "trkseg"):
             segment = child
@@ -62,6 +62,8 @@ def parse(filename, trk_name=None):
         if check_tag(child, "ele"):
             trk_end_point.set_elevation(child.text)
     coordinates.append(trk_end_point)
+
+    return trk_start_point, trk_end_point, coordinates
 
     
 

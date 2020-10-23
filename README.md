@@ -1,6 +1,6 @@
 # HikingCV
 
-HikingCV is a python that aims to provide helpful utilites for every mountaineer.
+HikingCV is a python that aims to provide helpful utilities for every mountaineer.
 
 ## Features
 

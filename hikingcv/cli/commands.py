@@ -47,7 +47,18 @@ def read_csv(filepath, options):
 
     print(df.head())
 
-    return df
+    out = pd.DataFrame()
+
+    out["label"] = df[options.get("label")].fillna("Unlabeled")
+    out["lat"] = df[options.get("lat")]
+    out["lng"] = df[options.get("lng")]
+
+    # Filtering just valid lat lng rows
+    condition = out["lat"].notnull() & out["lng"].notnull()
+
+    out = out[condition]
+
+    return out
 
 
 def get_icon_styles():

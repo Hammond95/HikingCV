@@ -4,11 +4,11 @@ import sys
 from os import path, walk
 
 from hikingcv.cli.commands import (
-    parse_csv_path, 
-    read_csv, 
-    process_files, 
-    create_kml_map, 
-    get_icon_styles, 
+    parse_csv_path,
+    read_csv,
+    process_files,
+    create_kml_map,
+    get_icon_styles,
     get_lines_styles,
     process_csv_df,
 )
@@ -31,52 +31,45 @@ def do_help(command):
 def cli(ctx):
     pass
 
+
 @cli.command(
-    name="map", 
-    help="Generates a kml file with your hiking trails from gpx files, that can be imported in MyMaps."
+    name="map",
+    help="Generates a kml file with your hiking trails from gpx files, that can be imported in MyMaps.",
 )
 @click.option(
-    "--folders", "-f",
+    "--folders",
+    "-f",
     required=True,
-    help="A list of folders containing the gpx files, each folder will be a layer in MyMaps. (max 10 folders)"
+    help="A list of folders containing the gpx files, each folder will be a layer in MyMaps. (max 10 folders)",
 )
 @click.option(
-    "--root", "-R",
+    "--root",
+    "-R",
     required=False,
     is_flag=True,
-    help="If this option is provided, just consider first element of folders and uses the specified folder as a root acting recursively."
+    help="If this option is provided, just consider first element of folders and uses the specified folder as a root acting recursively.",
 )
 @click.option(
-    "--coords-csv", "-C",
+    "--coords-csv",
+    "-C",
     required=False,
-    help="A csv path to import coordinates points in a layer. " + MAP__PATH_SYNTAX
+    help="A csv path to import coordinates points in a layer. " + MAP__PATH_SYNTAX,
 )
 @click.option(
     "--csv-layer-name",
     required=False,
     help="Define a name for the layer build from the csv file.",
-    default="Places of Interest"
+    default="Places of Interest",
 )
+@click.option("--dump", required=False, is_flag=True, help="Prints Map KML to stdout.")
 @click.option(
-    "--dump",
-    required=False,
-    is_flag=True,
-    help="Prints Map KML to stdout."
-)
-@click.option(
-    "--output", "-o",
+    "--output",
+    "-o",
     required=False,
     default=None,
-    help="Writes the KML document to the specified path."
+    help="Writes the KML document to the specified path.",
 )
-def map(
-    folders, 
-    root, 
-    coords_csv, 
-    csv_layer_name, 
-    dump, 
-    output
-):
+def map(folders, root, coords_csv, csv_layer_name, dump, output):
     xml_styles = []
     xml_folders = []
 
@@ -84,10 +77,7 @@ def map(
 
     if root:
         for (dirpath, dirnames, filenames) in walk(path.abspath(folders)):
-            folders_list = [
-                path.join(path.abspath(folders), f) 
-                for f in dirnames[1:]
-            ]
+            folders_list = [path.join(path.abspath(folders), f) for f in dirnames[1:]]
             break
 
     for folder in folders_list:
@@ -106,23 +96,22 @@ def map(
         xml_folders.append(folder)
 
     if len(layers) > 10:
-        raise ValueError("The maximum number of layers allowed by MyMaps is 10, provided {} paths.".format(len(layers)))
+        raise ValueError(
+            "The maximum number of layers allowed by MyMaps is 10, provided {} paths.".format(
+                len(layers)
+            )
+        )
 
     xml_styles.extend(get_icon_styles())
     xml_styles.extend(get_lines_styles())
 
-    xml_folders.extend(
-        process_files(folders_list)
-    )
+    xml_folders.extend(process_files(folders_list))
 
     kml = create_kml_map(xml_styles, xml_folders)
 
-    if dump and not(output):
+    if dump and not (output):
         kml.dump()
-    
+
     if output:
         kml.to_file(path.abspath(output))
-        click.echo("Map document created at {}.". format(path.abspath(output)))
-
-
-
+        click.echo("Map document created at {}.".format(path.abspath(output)))

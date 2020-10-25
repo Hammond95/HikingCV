@@ -4,53 +4,47 @@ from typing import Union, List
 
 from hikingcv.types.coordinates import LatLngPoint
 
-class Placemark(metaclass=abc.ABCMeta):
 
+class Placemark(metaclass=abc.ABCMeta):
     def __init__(
         self,
         name: str,
         description: str,
         coordinates: Union[LatLngPoint, List[LatLngPoint]],
-        style_url=None
+        style_url=None,
     ):
         self.name = name
         self.description = description
         self.coordinates = self._process_coords(coordinates)
         self.type = None
-        self.style_url = (style_url or "")
-    
+        self.style_url = style_url or ""
+
     @abc.abstractmethod
     def _process_coords(self, coordinates) -> str:
         pass
-    
+
     @abc.abstractmethod
     def generate_document(self) -> ET.Element:
         pass
 
 
 class Point(Placemark):
-
     def __init__(
         self,
         name: str,
         description: str,
         coordinates: Union[LatLngPoint, List[LatLngPoint]],
-        style_url=None
+        style_url=None,
     ):
-        super().__init__(
-            name, description, coordinates, 
-            style_url=style_url
-        )
+        super().__init__(name, description, coordinates, style_url=style_url)
         self.type = "Point"
-    
+
     def _process_coords(self, coordinates) -> str:
         return "{},{},{}".format(
-            coordinates.lng,
-            coordinates.lat,
-            (coordinates.elev or 0.0)
+            coordinates.lng, coordinates.lat, (coordinates.elev or 0.0)
         )
-    
-    def generate_document(self)  -> ET.Element:
+
+    def generate_document(self) -> ET.Element:
         placemark = ET.Element("Placemark")
         ET.SubElement(placemark, "name").text = self.name
         ET.SubElement(placemark, "description").text = self.description
@@ -62,20 +56,16 @@ class Point(Placemark):
 
 
 class LineString(Placemark):
-
     def __init__(
         self,
         name: str,
         description: str,
         coordinates: List[LatLngPoint],
-        style_url=None
+        style_url=None,
     ):
-        super().__init__(
-            name, description, coordinates, 
-            style_url=style_url
-        )
+        super().__init__(name, description, coordinates, style_url=style_url)
         self.type = "LineString"
-    
+
     def _process_coords(self, coordinates) -> str:
         return "\n".join(
             [
@@ -83,7 +73,7 @@ class LineString(Placemark):
                 for coord in coordinates
             ]
         )
-    
+
     def generate_document(self) -> ET.Element:
         placemark = ET.Element("Placemark")
         ET.SubElement(placemark, "name").text = self.name
@@ -94,12 +84,3 @@ class LineString(Placemark):
         ET.SubElement(placemarker_shape, "tessellate").text = "1"
 
         return placemark
-
-        
-
-
-
-
-    
-
-

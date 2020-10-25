@@ -10,6 +10,7 @@ from hikingcv.cli.commands import (
     create_kml_map, 
     get_icon_styles, 
     get_lines_styles,
+    process_csv_df,
 )
 from hikingcv.cli.messages import MAP__PATH_SYNTAX
 
@@ -51,6 +52,12 @@ def cli(ctx):
     help="A csv path to import coordinates points in a layer. " + MAP__PATH_SYNTAX
 )
 @click.option(
+    "--csv-layer-name",
+    required=False,
+    help="Define a name for the layer build from the csv file.",
+    default="Places of Interest"
+)
+@click.option(
     "--dump",
     required=False,
     is_flag=True,
@@ -62,12 +69,22 @@ def cli(ctx):
     default=None,
     help="Writes the KML document to the specified path."
 )
-def map(folders, root, coords_csv, dump, output):
+def map(
+    folders, 
+    root, 
+    coords_csv, 
+    csv_layer_name, 
+    dump, 
+    output
+):
+    xml_styles = []
+    xml_folders = []
+
     folders_list = folders.split(" ")
 
     if root:
         for (dirpath, dirnames, filenames) in walk(path.abspath(folders)):
-            folders_list = [ 
+            folders_list = [
                 path.join(path.abspath(folders), f) 
                 for f in dirnames[1:]
             ]
@@ -84,15 +101,19 @@ def map(folders, root, coords_csv, dump, output):
         csv_filepath, options = parse_csv_path(coords_csv)
         layers.append(csv_filepath)
         df = read_csv(csv_filepath, options)
-    
+        style, folder = process_csv_df(csv_layer_name, df)
+        xml_styles.append(style)
+        xml_folders.append(folder)
+
     if len(layers) > 10:
         raise ValueError("The maximum number of layers allowed by MyMaps is 10, provided {} paths.".format(len(layers)))
 
-    xml_styles = []
     xml_styles.extend(get_icon_styles())
     xml_styles.extend(get_lines_styles())
 
-    xml_folders = process_files(folders_list)
+    xml_folders.extend(
+        process_files(folders_list)
+    )
 
     kml = create_kml_map(xml_styles, xml_folders)
 
@@ -101,6 +122,7 @@ def map(folders, root, coords_csv, dump, output):
     
     if output:
         kml.to_file(path.abspath(output))
+        click.echo("Map document created at {}.". format(path.abspath(output)))
 
 
 

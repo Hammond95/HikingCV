@@ -24,6 +24,4 @@ class LatLngPoint(object):
     
     def set_timestamp(self, ts: str):
         self.ts = parse(ts)
-    
-    
 

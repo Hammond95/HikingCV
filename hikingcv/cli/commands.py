@@ -1,15 +1,21 @@
 import re
+import sys
 import click
 import functools
 import operator
 import pandas as pd
 import fnmatch
+import xml.etree.cElementTree as ET
 from os import path, walk
 from pathlib import Path
+from typing import List
 
 from hikingcv.gpx import parser
 
+from hikingcv.types.coordinates import LatLngPoint
+
 from hikingcv.mymaps.folder import FolderDocument
+from hikingcv.mymaps.placemark import Point
 from hikingcv.mymaps.segment import SegmentDocument
 from hikingcv.mymaps.map import MapDocument
 from hikingcv.mymaps.kml import KmlMap
@@ -37,6 +43,7 @@ def parse_csv_path(csvpath):
 
 
 def read_csv(filepath, options):
+    click.echo("Reading file at '{}'.".format(filepath))
     df = pd.read_csv(
         filepath,
         sep=(options.get("sep") or ","),
@@ -45,21 +52,57 @@ def read_csv(filepath, options):
         ),
     )
 
-    print(df.head())
+    click.echo(
+        "    File has the following columns: \n        > {}".format(
+            "\n        > ".join(df.columns.to_list())
+        )
+    )
 
     out = pd.DataFrame()
 
-    out["label"] = df[options.get("label")].fillna("Unlabeled")
-    out["lat"] = df[options.get("lat")]
-    out["lng"] = df[options.get("lng")]
+    if not(options.get("label") and options.get("lat") and options.get("lng")):
+        raise ValueError("Please provide values for label, lat and lng options!")
+
+    out["label"] = df[options["label"]].fillna("Unlabeled")
+    out["lat"] = df[options["lat"]]
+    out["lng"] = df[options["lng"]]
 
     # Filtering just valid lat lng rows
-    condition = out["lat"].notnull() & out["lng"].notnull()
-
+    condition = (out["lat"].notnull() & out["lng"].notnull())
     out = out[condition]
 
     return out
 
+def process_csv_df(name: str, df: pd.DataFrame):
+    style = StyleMapDocument(
+        "icon-1634-000000",
+        IconStyleDocument(
+            "icon-1634-000000-normal",
+            "https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png",
+            icon_scale=1,
+        ),
+        IconStyleDocument(
+            "icon-1634-000000-highlight",
+            "https://www.gstatic.com/mapspro/images/stock/503-wht-blank_maps.png",
+            icon_scale=1,
+            label_scale=1,
+        ),
+    )
+
+    folder = FolderDocument(name)
+    placemarks = []
+    for i, row in df.iterrows():
+        placemarks.append(
+            Point(
+                row["label"],
+                (row.get("description") or ""),
+                LatLngPoint(row["lat"], row["lng"]),
+                style_url="icon-1634-000000",
+            ).generate_document()
+        )
+    folder.add_placemarks(placemarks)
+    
+    return style, folder
 
 def get_icon_styles():
     start_ico_style_norm = IconStyleDocument(
@@ -117,7 +160,7 @@ def get_lines_styles():
     return [line_style_map]
 
 
-def process_files(folders_list):
+def process_files(folders_list) -> List[ET.Element]:
     xml_folders = []
 
     for folder in folders_list:
@@ -150,7 +193,7 @@ def process_files(folders_list):
 
             xml_placemarks.extend(segment_document.generate_document())
         
-        click.echo("Adding placemarks to layer '{}'.".format(pathleaf(folder)))
+        click.echo("    Adding placemarks to layer '{}'.".format(pathleaf(folder)))
         xml_folder_doc.add_placemarks(xml_placemarks)
         xml_folders.append(xml_folder_doc)
 

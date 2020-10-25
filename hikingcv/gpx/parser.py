@@ -1,8 +1,5 @@
-import xml
 import xml.etree.ElementTree as ET
-
 from hikingcv.types.coordinates import LatLngPoint
-from dateutil.parser import parse
 
 
 def read_file(filename):
